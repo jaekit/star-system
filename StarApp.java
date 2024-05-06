@@ -1,9 +1,12 @@
 import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+
 import javax.swing.*;
 import java.util.*;
 import java.io.File;
 
-public class StarApp {
+public class StarApp implements KeyListener {
 	JFrame frame = new JFrame();
 	JPanel panel = new JPanel() {
 		public void paintComponent(Graphics g) {
@@ -32,12 +35,15 @@ public class StarApp {
 	};
 	HashMap<Integer, Star> stars = new HashMap<>();
 	ArrayList<Constellation> constellations = new ArrayList<>();
+	double directionX = 0.0;
+	double directionY = 0.0;
 
 	public StarApp() {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setSize(1100, 1100);
 		frame.setVisible(true);
 		frame.add(panel);
+		frame.addKeyListener(this);
 	}
 
 	public void start() {
@@ -56,20 +62,25 @@ public class StarApp {
 
 	public void update(double delta) {
 		for (Star s : stars.values()) {
-			// convert to spherical coordinates.
-			double distance = Math.sqrt(Math.pow(s.position.z, 2) + Math.pow(s.position.x, 2));
-			double theta = Math.acos(s.position.y);
-			double phi = Math.signum(s.position.x) * Math.acos(s.position.z / distance);
-
-			// increment phi
-			phi += delta * 0.1;
-
-			// convert back to cartesian coordinates.
-			double z = Math.sin(theta) * Math.cos(phi);
-			double x = Math.sin(theta) * Math.sin(phi);
-			double y = Math.cos(theta);
-			s.position = new Vector3(x, y, z);
+			s.position = incrementPhi(s.position.x, s.position.y, s.position.z, directionX);
+			Vector3 position = incrementPhi(s.position.z, s.position.x, s.position.y, -directionY);
+			s.position = new Vector3(position.y, position.z, position.x);
 		}
+	}
+
+	public Vector3 incrementPhi(double x, double y, double z, double delta) {
+		double distance = Math.sqrt(Math.pow(z, 2) + Math.pow(x, 2));
+		double theta = Math.acos(y);
+		double phi = Math.signum(x) * Math.acos(z / distance);
+
+		// increment phi
+		phi += delta * 0.01;
+
+		// convert back to cartesian coordinates.
+		z = Math.sin(theta) * Math.cos(phi);
+		x = Math.sin(theta) * Math.sin(phi);
+		y = Math.cos(theta);
+		return new Vector3(x, y, z);
 	}
 
 	public void loadStars() {
@@ -120,5 +131,50 @@ public class StarApp {
 	public static void main(String[] args) {
 		StarApp app = new StarApp();
 		app.start();
+	}
+
+	@Override
+	public void keyPressed(KeyEvent e) {
+		if(e.getKeyCode() == KeyEvent.VK_UP) {
+			directionY = -1;
+		}
+		if(e.getKeyCode() == KeyEvent.VK_DOWN) {
+			directionY = 1;
+		}
+		if(e.getKeyCode() == KeyEvent.VK_LEFT) {
+			directionX = -1;
+		}
+		if(e.getKeyCode() == KeyEvent.VK_RIGHT) {
+			directionX = 1;
+		}
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e) {
+		if(e.getKeyCode() == KeyEvent.VK_UP) {
+			if (directionY == -1) {
+				directionY = 0;
+			}
+		}
+		if(e.getKeyCode() == KeyEvent.VK_DOWN) {
+			if (directionY == 1) {
+				directionY = 0;
+			}
+		}
+		if(e.getKeyCode() == KeyEvent.VK_LEFT) {
+			if (directionX == -1) {
+				directionX = 0;
+			}
+		}
+		if(e.getKeyCode() == KeyEvent.VK_RIGHT) {
+			if (directionX == 1) {
+				directionX = 0;
+			}
+		}
+	}
+
+	@Override
+	public void keyTyped(KeyEvent e) {
+		
 	}
 }
